@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeType - Coding Typing Practice</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-html.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+
+        body {
+            background-color: white;
+            color: #333;
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: #f8f8f8;
+            border-radius: 4px;
+        }
+
+        .practice-area {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .target-code {
+            white-space: pre-wrap;
+            padding: 1rem;
+            border: 2px solid #eee;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .character {
+            transition: background-color 0.2s;
+        }
+
+        .character.correct {
+            color: #2ecc71;
+        }
+
+        .character.incorrect {
+            color: #e74c3c;
+            text-decoration: underline;
+        }
+
+        .current {
+            background-color: #eee;
+        }
+
+        #input-field {
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: default;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 0.5rem;
+        }
+
+        button:hover {
+            background: #555;
+        }
+
+        .zen-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: white;
+            z-index: 9999;
+        }
+
+        /* Add to style section */
+        @media (max-width: 600px) {
+            .stats {
+                flex-wrap: wrap;
+            }
+
+            .stats>div {
+                width: 50%;
+                text-align: center;
+                padding: 0.5rem;
+            }
+
+            #customText {
+                font-size: 16px;
+                /* Prevent mobile zoom */
+            }
+        }
+
+
+        .zen-mode {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90vw;
+            max-width: 800px;
+            background: white;
+            z-index: 9999;
+            padding: 2rem;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .zen-mode .stats,
+        .zen-mode .controls,
+        .zen-mode .custom-text-section,
+        .zen-mode .history {
+            display: none;
+        }
+
+        .zen-mode .practice-area {
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        #sheetContent {
+            max-width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 10000;
+        }
+
+        #sheetContent h4 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        #sheetContent br {
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CodeType</h1>
+            <p>Practice Writing in Code-Languages</p>
+        </div>
+
+        <div class="stats">
+            <div>Time: <span id="timer">0s</span></div>
+            <div>Accuracy: <span id="accuracy">100%</span></div>
+            <div>Speed: <span id="speed">0 CPM</span></div>
+            <div>Errors: <span id="errors">0</span></div>
+        </div>
+
+
+
+        <div class="practice-area">
+            <div class="target-code" id="targetCode"></div>
+            <input type="text" id="input-field">
+        </div>
+
+        <div class="controls">
+            <button onclick="newPractice()">New Practice</button>
+            <select id="modeSelect" onchange="changeMode()">
+                <option value="binary">Binary</option>
+                <option value="hex">Hexadecimal</option>
+                <option value="morse">Morse Code</option>
+            </select>
+            <!-- Add to controls section -->
+            <select id="practiceMode" onchange="changePracticeMode()">
+                <option value="guided">Guided Typing</option>
+                <option value="freestyle">Freestyle</option>
+                <option value="timed">Timed Challenge</option>
+            </select>
+            <!-- Add to controls section -->
+            <select id="difficultySelect" onchange="changeDifficulty()">
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="expert">Expert</option>
+            </select>
+
+            <select id="languageSelect" style="display: none;">
+                <option value="python">Python</option>
+                <option value="javascript">JavaScript</option>
+                <option value="html">HTML</option>
+            </select>
+            <button onclick="toggleZenMode()">Zen Mode</button>
+
+
+        </div>
+        <div class="custom-text-section" style="margin-bottom: 2rem;">
+            <textarea id="customText" placeholder="Enter your own text to practice..." style="
+                    width: 100%;
+                    padding: 0.5rem;
+                    border: 2px solid #eee;
+                    border-radius: 4px;
+                    font-family: 'Courier New', monospace;
+                    resize: vertical;
+                    min-height: 80px;
+                    margin-bottom: 0.5rem;
+                "></textarea>
+            <button onclick="useCustomText()" style="width: 100%;">Use Custom Text</button>
+        </div>
+        <!-- Add to container -->
+        <div class="history" style="margin-top: 2rem;">
+            <h3>Session History</h3>
+            <div id="historyList" style="font-size: 0.9rem;"></div>
+        </div>
+
+        <!-- Add to container -->
+        <div class="cheat-sheet" style="position: fixed; right: 20px; bottom: 20px;">
+            <button onclick="toggleCheatSheet()">?</button>
+            <div id="sheetContent" style="display: none; background: white; padding: 1rem; border: 1px solid #eee;">
+                <!-- Dynamic content based on selected encoding -->
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        let currentText = '';
+        let currentIndex = 0;
+        let startTime = null;
+        let timerInterval = null;
+        let errors = 0;
+        let totalTyped = 0;
+        let currentDifficulty = 'beginner';
+
+        function changeDifficulty() {
+            currentDifficulty = document.getElementById('difficultySelect').value;
+            newPractice();
+        }
+
+        // Modified generatePracticeText function
+        function generatePracticeText(mode, customText = null) {
+            const difficulty = difficultyLevels[currentDifficulty];
+            const samples = {
+                beginner: [
+                    "Hello", "Test 123", "Easy", "Basic", "Start"
+                ],
+                intermediate: [
+                    "Medium difficulty text", "Programming 101",
+                    "Hex values: AF3", "Binary practice", "Morse test"
+                ],
+                expert: [
+                    "Complex!@# patterns", "Advanced encoding challenge",
+                    "Mix of characters: 0xAF3B", "Morse/hex combination",
+                    "Expert-level typing challenge"
+                ]
+            };
+
+            let baseText = customText || samples[currentDifficulty][
+                Math.floor(Math.random() * samples[currentDifficulty].length)
+            ];
+
+            // Generate random text if no custom input
+            if (!customText && Math.random() < 0.3) {
+                const charSet = difficulty.charSet.match(/[^0-9A-Za-z]/) ?
+                    difficulty.charSet :
+                    'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ';
+                baseText = Array.from({ length: difficulty.length }, () =>
+                    charSet[Math.floor(Math.random() * charSet.length)]
+                ).join('');
+            }
+
+            return encoders[mode](baseText);
+        }
+        // Add to script
+        const difficultyLevels = {
+            beginner: {
+                length: 50,
+                charSet: '01',
+                timeout: null
+            },
+            intermediate: {
+                length: 100,
+                charSet: '0-9A-F',
+                timeout: 1500
+            },
+            expert: {
+                length: 200,
+                charSet: '0-9A-F.-/ ',
+                timeout: 1000
+            }
+        };
+
+        const encoders = {
+            binary: text => [...text].map(c => c.charCodeAt(0).toString(2).padStart(8, '0')).join(' '),
+            hex: text => [...text].map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join(' '),
+            morse: text => {
+                const morseMap = {
+                    'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.',
+                    'F': '..-.', 'G': '--.', 'H': '....', 'I': '..', 'J': '.---',
+                    'K': '-.-', 'L': '.-..', 'M': '--', 'N': '-.', 'O': '---',
+                    'P': '.--.', 'Q': '--.-', 'R': '.-.', 'S': '...', 'T': '-',
+                    'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-', 'Y': '-.--',
+                    'Z': '--..', ' ': '/'
+                };
+                return text.toUpperCase().split('').map(c => morseMap[c] || '').join(' ');
+            }
+        };
+        let customPracticeText = '';
+
+        function useCustomText() {
+            const text = document.getElementById('customText').value.trim();
+            if (!text) {
+                alert('Please enter some text to practice!');
+                return;
+            }
+            const mode = document.getElementById('modeSelect').value;
+            originalText = encoders[mode](text);
+            currentText = originalText;
+            currentIndex = 0;
+            errors = 0;
+            totalTyped = 0;
+            startTime = null;
+            clearInterval(timerInterval);
+            updateDisplay();
+            updateStats();
+            document.getElementById('input-field').value = '';
+            document.getElementById('input-field').focus();
+        }
+        function generatePracticeText(mode, customText = null) {
+            const samples = [
+                "Hello World",
+                "The quick brown fox",
+                "12345 Programming",
+                "Code in binary",
+                "Practice makes perfect"
+            ];
+            const baseText = customText || samples[Math.floor(Math.random() * samples.length)];
+            return encoders[mode](baseText);
+        }
+
+        function updateDisplay() {
+            const targetElement = document.getElementById('targetCode');
+            targetElement.innerHTML = currentText.split('').map((c, i) => {
+                let cls = '';
+                if (i === currentIndex) cls = 'current';
+                else if (i < currentIndex) cls = currentText[i] === originalText[i] ? 'correct' : 'incorrect';
+                return `<span class="character ${cls}">${c}</span>`;
+            }).join('');
+        }
+
+        function updateStats() {
+            const timeElapsed = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('timer').textContent = `${timeElapsed}s`;
+
+            const accuracy = totalTyped > 0
+                ? Math.round(((totalTyped - errors) / totalTyped) * 100)
+                : 100;
+            document.getElementById('accuracy').textContent = `${accuracy}%`;
+
+            const cpm = Math.round((totalTyped - errors) / (timeElapsed / 60));
+            document.getElementById('speed').textContent = `${cpm} CPM`;
+
+            document.getElementById('errors').textContent = errors;
+        }
+
+        // Modify handleInput function
+
+
+        function newPractice() {
+            const mode = document.getElementById('modeSelect').value;
+            const isCodeMode = mode === 'code';
+            document.getElementById('languageSelect').style.display = isCodeMode ? 'inline' : 'none';
+            const customText = document.getElementById('customText').value.trim();
+
+            originalText = customText
+                ? encoders[mode](customText)
+                : generatePracticeText(mode);
+
+            currentText = originalText;
+            currentIndex = 0;
+            errors = 0;
+            totalTyped = 0;
+            startTime = null;
+            clearInterval(timerInterval);
+            updateDisplay();
+            updateStats();
+            document.getElementById('input-field').value = ''; // Add this line
+            document.getElementById('input-field').focus();
+            applySyntaxHighlighting();
+            if (difficultyLevels[currentDifficulty].timeout) {
+                setTimeout(endPractice, difficultyLevels[currentDifficulty].timeout);
+            }
+        }
+
+        function changeMode() {
+            newPractice();
+        }
+        function changePracticeMode() {
+            const mode = document.getElementById('practiceMode').value;
+            // Reset practice when changing modes
+            newPractice();
+        }
+
+        // Modified handleInput function
+        function handleInput(e) {
+            const practiceMode = document.getElementById('practiceMode').value;
+            let typedChar = e.data || '';
+            const expectedChar = originalText[currentIndex];
+
+            // Explicitly handle space character
+            if (e.inputType === 'insertText' && e.data === null) {
+                typedChar = ' ';
+            }
+
+            // Reset input field after each character
+            e.target.value = '';
+
+            if (!startTime) {
+                startTime = Date.now();
+                if (practiceMode === 'timed') {
+                    setTimeout(endPractice, 60000);
+                }
+                timerInterval = setInterval(updateStats, 1000);
+            }
+
+            if (practiceMode === 'guided') {
+                if (typedChar === expectedChar) {
+                    currentIndex++;
+                    provideHapticFeedback(true);
+                } else {
+                    errors++;
+                    provideHapticFeedback(false);
+                }
+                totalTyped++;
+            }
+            else if (practiceMode === 'freestyle') {
+                currentIndex = Math.min(currentIndex + 1, originalText.length);
+                if (typedChar !== expectedChar) {
+                    errors++;
+                    provideHapticFeedback(false);
+                } else {
+                    provideHapticFeedback(true);
+                }
+                totalTyped++;
+            }
+            else { // Timed mode
+                if (typedChar === expectedChar) {
+                    currentIndex++;
+                    provideHapticFeedback(true);
+                } else {
+                    errors++;
+                    provideHapticFeedback(false);
+                }
+                totalTyped++;
+            }
+
+            updateDisplay();
+            updateStats();
+
+            if (currentIndex >= originalText.length) {
+                endPractice();
+            }
+        }
+
+        function toggleCheatSheet() {
+            const sheet = document.getElementById('sheetContent');
+            const mode = document.getElementById('modeSelect').value;
+
+            // Create cheat sheet content
+            const content = {
+                binary: `
+                    <h4>Binary Cheat Sheet</h4>
+                    A: 01000001<br>
+                    B: 01000010<br>
+                    ... (add full chart)
+                `,
+                hex: `
+                    <h4>Hex Cheat Sheet</h4>
+                    A: 41<br>
+                    B: 42<br>
+                    ... (add full chart)
+                `,
+                morse: `
+                    <h4>Morse Code Cheat Sheet</h4>
+                    A: .-<br>
+                    B: -...<br>
+                    ... (add full chart)
+                `
+            };
+
+            sheet.innerHTML = content[mode] || 'Select a coding mode first';
+            sheet.style.display = sheet.style.display === 'none' ? 'block' : 'none';
+        }
+        function saveSessionHistory() {
+            const historyEntry = {
+                date: new Date().toLocaleString(),
+                accuracy: document.getElementById('accuracy').textContent,
+                speed: document.getElementById('speed').textContent,
+                mode: document.getElementById('modeSelect').value,
+                practiceMode: document.getElementById('practiceMode').value
+            };
+
+            // Get existing history
+            const history = JSON.parse(localStorage.getItem('typingHistory') || '[]');
+            history.push(historyEntry);
+            localStorage.setItem('typingHistory', JSON.stringify(history.slice(-5)));
+
+            // Update display
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = history.map(entry => `
+        <div style="margin: 0.5rem 0; padding: 0.5rem; border-bottom: 1px solid #eee;">
+            [${entry.date}] ${entry.mode} (${entry.practiceMode}): 
+            ${entry.speed}, ${entry.accuracy}
+        </div>
+    `).join('');
+        }
+
+        // Update endPractice function
+        function endPractice() {
+            clearInterval(timerInterval);
+            document.getElementById('input-field').blur();
+            saveSessionHistory();
+            showSummary({
+                time: document.getElementById('timer').textContent,
+                accuracy: document.getElementById('accuracy').textContent,
+                speed: document.getElementById('speed').textContent,
+                errors: document.getElementById('errors').textContent
+            });
+        }
+        function showSummary(stats) {
+            const html = `
+        <div class="summary">
+            <h3>Session Complete!</h3>
+            <p>⏱️ ${stats.time} | 🎯 ${stats.accuracy} | ⚡ ${stats.speed} | ❌ ${stats.errors}</p>
+            <button onclick="this.parentElement.remove()">Continue</button>
+        </div>
+    `;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+        // Initialize history on load
+        window.addEventListener('load', () => {
+            saveSessionHistory(); // Load existing history
+        });
+        // Add syntax highlighting logic
+        function applySyntaxHighlighting() {
+            if (document.getElementById('modeSelect').value === 'code') {
+                const language = document.getElementById('languageSelect').value;
+                const codeElement = document.getElementById('targetCode');
+                codeElement.className = `language-${language}`;
+                Prism.highlightAllUnder(codeElement);
+            }
+        }
+        // Add to handleInput function
+
+        function toggleZenMode() {
+            const container = document.querySelector('.container');
+            const practiceArea = document.querySelector('.practice-area');
+            const inputField = document.getElementById('input-field');
+
+            if (!container.classList.contains('zen-mode')) {
+                // Enter Zen Mode
+                container.classList.add('zen-mode');
+                practiceArea.style.fontSize = '1.5rem';
+                document.documentElement.style.overflow = 'hidden';
+                // Force focus to input field
+                setTimeout(() => inputField.focus(), 100);
+            } else {
+                // Exit Zen Mode
+                container.classList.remove('zen-mode');
+                practiceArea.style.fontSize = '1.2rem';
+                document.documentElement.style.overflow = 'auto';
+                // Maintain focus after exiting
+                setTimeout(() => inputField.focus(), 100);
+            }
+            // Add exit button in zen mode
+            if (!container.classList.contains('zen-mode')) {
+                // Add exit button
+                const exitButton = document.createElement('button');
+                exitButton.textContent = 'Exit Zen (Esc)';
+                exitButton.style.position = 'fixed';
+                exitButton.style.top = '10px';
+                exitButton.style.right = '10px';
+                exitButton.onclick = toggleZenMode;
+                container.appendChild(exitButton);
+
+                // Add keyboard shortcut
+                document.addEventListener('keydown', handleEscape);
+            } else {
+                // Remove exit button
+                const exitButton = container.querySelector('button[style*="top: 10px"]');
+                if (exitButton) exitButton.remove();
+
+                // Remove keyboard shortcut
+                document.removeEventListener('keydown', handleEscape);
+            }
+        }
+        function handleEscape(e) {
+            if (e.key === 'Escape') toggleZenMode();
+        }
+        function provideHapticFeedback(isCorrect) {
+            if (window.navigator && window.navigator.vibrate) {
+                try {
+                    // Use shorter vibrations for better responsiveness
+                    navigator.vibrate(isCorrect ? 30 : 100);
+                } catch (e) {
+                    console.log('Vibration not supported');
+                }
+            }
+        }
+
+        // Save/Load from localStorage
+        function saveSettings() {
+            localStorage.setItem('ctSettings', JSON.stringify({
+                mode: document.getElementById('modeSelect').value,
+                practiceMode: document.getElementById('practiceMode').value,
+                difficulty: document.getElementById('difficultySelect').value
+            }));
+        }
+
+        window.addEventListener('load', () => {
+            const settings = JSON.parse(localStorage.getItem('ctSettings'));
+            if (settings) {
+                document.getElementById('modeSelect').value = settings.mode;
+                document.getElementById('practiceMode').value = settings.practiceMode;
+                document.getElementById('difficultySelect').value = settings.difficulty;
+            }
+        });
+
+        // Update event listener initialization
+        document.getElementById('input-field').addEventListener('input', handleInput);
+        // Update the keydown event listener
+        document.getElementById('input-field').addEventListener('keydown', (e) => {
+            // Only prevent default for spacebar when NOT in input field
+            if (e.key === ' ' && document.activeElement !== e.target) {
+                e.preventDefault();
+            }
+        });
+
+        // Initialize
+
+        newPractice();
+
+    </script>
+    
+    <footer style="text-align:center; margin-top:2rem; color:#666;">
+        <div class="footer" style="text-align: center; margin-top: 2rem; color: #666;">
+            Made with ♥ by Annanay | 
+            <a href="https://github.com/Annanaygit" style="color: #333;">GitHub</a> |
+            <a href="https://annanay.dev.netlify.app" style="color: #333;">Other Projects</a>
+        </div>
+        <small>
+            CodeType © 2024 - 
+            
+        </small>
+    </footer>
+</body>
+
+</html>
