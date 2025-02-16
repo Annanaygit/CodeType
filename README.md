@@ -1,5 +1,5 @@
 # CodeType  
-Practice coding languages through typing drills!  
+Practice code languages through typing drills!  
 
 ## Features  
 - Binary/Hex/Morse modes  
